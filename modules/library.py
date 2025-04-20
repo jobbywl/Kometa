@@ -16,6 +16,7 @@ class Library(ABC):
         self.Sonarr = None
         self.Tautulli = None
         self.Webhooks = None
+        self.dtdd = None
         self.Operations = Operations(config, self)
         self.Overlays = None
         self.collections = []
@@ -110,6 +111,7 @@ class Library(ABC):
         self.radarr_remove_by_tag = params["radarr_remove_by_tag"]
         self.sonarr_add_all_existing = params["sonarr_add_all_existing"]
         self.sonarr_remove_by_tag = params["sonarr_remove_by_tag"]
+        self.dtdd_trigger = params["dtdd_trigger"]
         self.update_blank_track_titles = params["update_blank_track_titles"]
         self.remove_title_parentheses = params["remove_title_parentheses"]
         self.remove_overlays = params["remove_overlays"]
@@ -132,7 +134,7 @@ class Library(ABC):
                                                or self.mass_episode_audience_rating_update or self.mass_episode_critic_rating_update or self.mass_episode_user_rating_update \
                                                or self.mass_content_rating_update or self.mass_originally_available_update or self.mass_added_at_update or self.mass_original_title_update\
                                                or self.mass_imdb_parental_labels or self.genre_mapper or self.content_rating_mapper or self.mass_studio_update\
-                                               or self.radarr_add_all_existing or self.sonarr_add_all_existing or self.mass_poster_update or self.mass_background_update else False
+                                               or self.radarr_add_all_existing or self.sonarr_add_all_existing or self.mass_poster_update or self.mass_background_update or self.dtdd_trigger else False
         self.library_operation = True if self.items_library_operation or self.delete_collections or self.mass_collection_mode \
                                          or self.radarr_remove_by_tag or self.sonarr_remove_by_tag or self.show_unmanaged or self.show_unconfigured \
                                          or self.metadata_backup or self.update_blank_track_titles else False

@@ -7,6 +7,7 @@ from modules.cache import Cache
 from modules.convert import Convert
 from modules.ergast import Ergast
 from modules.icheckmovies import ICheckMovies
+from modules.dtdd import DoesTheDogDie
 from modules.imdb import IMDb
 from modules.github import GitHub
 from modules.letterboxd import Letterboxd
@@ -149,6 +150,7 @@ library_operations = {
     "mass_originally_available_update": mass_available_options, "mass_added_at_update": mass_available_options,
     "mass_collection_mode": "mass_collection_mode", "mass_poster_update": "dict", "mass_background_update": "dict",
     "metadata_backup": "dict", "delete_collections": "dict", "genre_mapper": "dict", "content_rating_mapper": "dict",
+    "dtdd_trigger":"str",
 }
 
 class ConfigFile:
@@ -342,6 +344,7 @@ class ConfigFile:
         if "gotify" in self.data:                      self.data["gotify"] = self.data.pop("gotify")
         if "ntfy" in self.data:                        self.data["ntfy"] = self.data.pop("ntfy")
         if "anidb" in self.data:                       self.data["anidb"] = self.data.pop("anidb")
+        if "dtdd" in self.data:                       self.data["dtdd"] = self.data.pop("dtdd")
         if "radarr" in self.data:
             if "monitor" in self.data["radarr"] and isinstance(self.data["radarr"]["monitor"], bool):
                 self.data["radarr"]["monitor"] = True if self.data["radarr"]["monitor"] else False
@@ -800,6 +803,9 @@ class ConfigFile:
             self.Convert = Convert(self.Requests, self.Cache, self.TMDb)
             self.AniList = AniList(self.Requests)
             self.ICheckMovies = ICheckMovies(self.Requests)
+            self.DoesTheDogDie = DoesTheDogDie(self.Requests,self.Cache,{
+            "token": check_for_attribute(self.data, "token", parent="dtdd", default_is_none=True)
+        })
             self.Letterboxd = Letterboxd(self.Requests, self.Cache)
             self.BoxOfficeMojo = BoxOfficeMojo(self.Requests, self.Cache)
             self.Reciperr = Reciperr(self.Requests)

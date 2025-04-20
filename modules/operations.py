@@ -1,6 +1,6 @@
 import os, re
 from datetime import datetime, timedelta, timezone
-from modules import plex, util, anidb
+from modules import plex, util, anidb, dtdd
 from modules.util import Failed, LimitReached
 from plexapi.exceptions import NotFound
 from plexapi.video import Movie, Show
@@ -11,7 +11,7 @@ meta_operations = [
     "mass_audience_rating_update", "mass_user_rating_update", "mass_critic_rating_update",
     "mass_episode_audience_rating_update", "mass_episode_user_rating_update", "mass_episode_critic_rating_update",
     "mass_genre_update", "mass_content_rating_update", "mass_originally_available_update", "mass_added_at_update",
-    "mass_original_title_update", "mass_poster_update", "mass_background_update", "mass_studio_update"
+    "mass_original_title_update", "mass_poster_update", "mass_background_update", "mass_studio_update","dtdd_trigger"
 ]
 name_display = {
     "audienceRating": "Audience Rating",
@@ -62,6 +62,7 @@ class Operations:
         logger.debug(f"Content Rating Mapper: {self.library.content_rating_mapper}")
         logger.debug(f"Metadata Backup: {self.library.metadata_backup}")
         logger.debug(f"Item Operation: {self.library.items_library_operation}")
+        logger.debug(f"Does The Dog Die Trigger: {self.library.dtdd_trigger}")
         logger.debug("")
 
         def should_be_deleted(col_in, labels_in, configured_in, managed_in, less_in):
@@ -760,6 +761,63 @@ class Operations:
                     logger.info(f"Item Edits{item_edits}")
                 else:
                     logger.info("No Item Edits")
+
+                if self.library.dtdd_trigger:
+                    try:
+                        labelList = list(map(lambda v: v.tag,item.labels))
+
+                        if "none" in self.library.dtdd_trigger:
+                            for label in labelList:
+                                if "dtdd" in label.lower():
+                                    if label not in label_edits["remove"]:
+                                        label_edits["remove"][label] = []
+                                    label_edits["remove"][label].append(item.ratingKey)
+                        else:
+                            #Cleanup all the labels which dont have the keyword
+                            for label in labelList:
+                                isMonitoredTrigger = True in list(map(lambda trigger: trigger in label.lower(),self.library.dtdd_trigger))
+                                if "dtdd" in label.lower() and not isMonitoredTrigger:
+                                    if label not in label_edits["remove"]:
+                                        label_edits["remove"][label] = []
+                                    label_edits["remove"][label].append(item.ratingKey)
+
+                            #Check if new labels need to be added
+                            dtdd = self.config.DoesTheDogDie
+                            media_id = dtdd.get_media_id(imdb_id)
+                            topics = dtdd.get_topics(media_id)
+                            for topic in topics:
+                                try:
+                                    labelName = f"Dtdd {topic.name}"
+                                    labelNotName = f"Dtdd {topic.notName}"
+
+                                    #if all are keyword search
+                                    if "all" in self.library.dtdd_trigger or True in list(map(lambda trigger: trigger in topic.name,self.library.dtdd_trigger)):
+                                        yesNoRatio = topic.noSum and topic.yesSum/topic.noSum or topic.yesSum
+                                        logger.info(f"dtdd: {topic.name} yes: {topic.yesSum} no: {topic.noSum} ratio: {yesNoRatio}")
+                                        if yesNoRatio >= 0.25:
+                                            if labelName not in labelList:
+                                                if labelName not in label_edits["add"]:
+                                                    label_edits["add"][labelName] = []
+                                                label_edits["add"][labelName].append(item.ratingKey)
+                                            if labelNotName in labelList:
+                                                if labelNotName not in label_edits["remove"]:
+                                                    label_edits["remove"][labelNotName] = []
+                                                label_edits["remove"][labelNotName].append(item.ratingKey)
+                                        else:
+                                            if labelNotName not in labelList:
+                                                if labelNotName not in label_edits["add"]:
+                                                    label_edits["add"][labelNotName] = []
+                                                label_edits["add"][labelNotName].append(item.ratingKey)
+                                            if labelName in labelList:
+                                                if labelName not in label_edits["remove"]:
+                                                    label_edits["remove"][labelName] = []
+                                                label_edits["remove"][labelName].append(item.ratingKey)
+                                except Exception as e:
+                                    logger.error(f"topic {topic.name} for {item.title} error: {e}")
+                    except Exception as e:
+                        logger.error(f"Item: {item.title} error: {e}")
+
+
 
                 if self.library.mass_poster_update or self.library.mass_background_update:
                     try:
