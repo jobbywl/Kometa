@@ -757,11 +757,6 @@ class Operations:
                                 except Failed:
                                     continue
 
-                if len(item_edits) > 0:
-                    logger.info(f"Item Edits{item_edits}")
-                else:
-                    logger.info("No Item Edits")
-
                 if self.library.dtdd_trigger:
                     try:
                         labelList = list(map(lambda v: v.tag,item.labels))
@@ -817,7 +812,10 @@ class Operations:
                     except Exception as e:
                         logger.error(f"Item: {item.title} error: {e}")
 
-
+                if len(item_edits) > 0:
+                    logger.info(f"Item Edits{item_edits}")
+                else:
+                    logger.info("No Item Edits")
 
                 if self.library.mass_poster_update or self.library.mass_background_update:
                     try:
